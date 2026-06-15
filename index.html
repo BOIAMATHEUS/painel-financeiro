@@ -13,7 +13,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:32px;line-height:1.5}
   .wrap{max-width:1100px;margin:0 auto}
-  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:22px}
+  header{margin-bottom:18px}
   h1{font-size:26px;font-weight:700;letter-spacing:-.02em}
   .sub{color:var(--mut);font-size:14px;margin-top:4px}
   .grid{display:grid;gap:18px}
@@ -48,11 +48,10 @@
   .foot{color:var(--mut);font-size:12px;margin-top:30px;text-align:center}
   .invoice{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
   .invoice:last-child{border:none}
-  .months{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
-  .month{min-width:150px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px}
-  .month.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-  .month .mn{font-weight:700;font-size:15px}
-  .month .mv{color:var(--mut);font-size:13px;margin-top:6px}
+  /* month selector */
+  .monthsel{display:flex;gap:8px;overflow-x:auto;margin-bottom:20px;padding-bottom:4px}
+  .mbtn{white-space:nowrap;padding:8px 16px;border-radius:20px;border:1px solid var(--line);background:var(--card2);color:var(--mut);font-size:14px;font-weight:600;cursor:pointer}
+  .mbtn.sel{background:var(--accent);color:#0b0d12;border-color:var(--accent)}
   .cal{display:flex;flex-direction:column;gap:0}
   .cal .day{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
   .cal .day:last-child{border:none}
@@ -60,13 +59,16 @@
   .cal .ditems{flex:1;display:flex;flex-direction:column;gap:6px}
   .cal .it{display:flex;justify-content:space-between;gap:10px;font-size:14px;flex-wrap:wrap}
   .cal .it .nm{display:flex;align-items:center;gap:8px}
+  .empty{color:var(--mut);font-size:14px}
   /* login */
   #lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50}
   #lock .box{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px;width:340px;max-width:90vw;text-align:center}
   #lock h3{font-size:18px;margin-bottom:6px}
   #lock p{color:var(--mut);font-size:13px;margin-bottom:18px}
-  #lock input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;margin-bottom:12px}
-  #lock button{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#0b0d12;font-weight:700;font-size:15px;cursor:pointer}
+  .pwrow{position:relative;margin-bottom:12px}
+  .pwrow input{width:100%;padding:12px 44px 12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px}
+  .pwrow .eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:6px;color:var(--mut);line-height:1}
+  #lock button.enter{width:100%;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#0b0d12;font-weight:700;font-size:15px;cursor:pointer}
   #lock .err{color:var(--noi);font-size:13px;margin-top:10px;min-height:18px}
   #app{display:none}
 </style>
@@ -77,43 +79,52 @@
   <div class="box">
     <h3>Painel Financeiro</h3>
     <p>Digite a senha para descriptografar e visualizar os dados.</p>
-    <input type="password" id="pw" placeholder="Senha" autofocus>
-    <button id="go">Entrar</button>
+    <div class="pwrow">
+      <input type="password" id="pw" placeholder="Senha" autofocus>
+      <button class="eye" id="eye" title="Mostrar/ocultar senha" type="button">&#128065;</button>
+    </div>
+    <button class="enter" id="go">Entrar</button>
     <div class="err" id="err"></div>
   </div>
 </div>
 
 <div id="app" class="wrap">
   <header>
-    <div>
-      <h1 id="t"></h1>
-      <div class="sub" id="s"></div>
-    </div>
+    <h1 id="t"></h1>
+    <div class="sub" id="s"></div>
   </header>
+
+  <div class="monthsel" id="monthsel"></div>
+
   <div class="grid g3">
-    <div class="card tot"><h2>Total de saídas no ciclo</h2><div class="big" id="total"></div><span class="pill">Fixos + faturas dos cartões</span></div>
-    <div class="card"><h2><span class="dot" style="background:var(--mat)"></span>Matheus paga</h2><div class="big" id="mat"></div><span class="pill" id="matpct"></span></div>
-    <div class="card"><h2><span class="dot" style="background:var(--noi)"></span>Rayane paga</h2><div class="big" id="noi"></div><span class="pill" id="noipct"></span></div>
+    <div class="card tot"><h2>Total a pagar no mês</h2><div class="big" id="total"></div><span class="pill" id="totsub"></span></div>
+    <div class="card"><h2><span class="dot" style="background:var(--mat)"></span>Matheus — total a pagar</h2><div class="big" id="mat"></div><span class="pill" id="matpct"></span></div>
+    <div class="card"><h2><span class="dot" style="background:var(--noi)"></span>Rayane — total a pagar</h2><div class="big" id="noi"></div><span class="pill" id="noipct"></span></div>
   </div>
+
   <div class="grid g2" style="margin-top:18px">
     <div class="card"><h2>Divisão por pessoa (conjunto rateado 50/50)</h2><div class="donutwrap"><div class="donut" id="donut"></div><div class="legend" id="legend"></div></div></div>
     <div class="card"><h2>Individual x Conjunto</h2><div id="bars"></div></div>
   </div>
-  <div class="section-title">Compromisso fixo por mês</div>
-  <div class="card"><p style="color:var(--mut);font-size:13px;margin-bottom:14px">Soma das contas fixas recorrentes (sem as faturas variáveis dos cartões). Repete todo mês.</p><div class="months" id="months"></div></div>
+
   <div class="section-title">Calendário de vencimentos do mês</div>
   <div class="card"><div class="cal" id="cal"></div></div>
-  <div class="section-title">Contas fixas mensais</div>
+
+  <div class="section-title">Contas fixas mensais (recorrentes)</div>
   <div class="card"><table><thead><tr><th>Conta</th><th>De quem</th><th class="r">Valor</th><th class="r">Venc.</th></tr></thead><tbody id="fixos"></tbody></table></div>
-  <div class="section-title">Faturas dos cartões</div>
+
+  <div class="section-title">Faturas dos cartões do mês</div>
   <div class="card" id="faturas"></div>
+
   <div class="section-title">Pendências</div>
   <div class="card"><ul class="pend" id="pend"></ul></div>
+
   <div class="foot" id="foot"></div>
 </div>
 
 <script>
-const CIPHERTEXT = "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";
+const CIPHERTEXT = "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";
+const PLAINDATA = null;
 const PBKDF2_ITER = 250000;
 
 async function decryptData(blobB64, pass){
@@ -125,101 +136,136 @@ async function decryptData(blobB64, pass){
   return JSON.parse(new TextDecoder().decode(pt));
 }
 
+function showApp(DADOS){
+  document.getElementById('lock').style.display='none';
+  document.getElementById('app').style.display='block';
+  initMonths(DADOS);
+}
+
 async function tryUnlock(){
   const err=document.getElementById('err'); err.textContent='';
   const pass=document.getElementById('pw').value;
   if(!pass){err.textContent='Digite a senha.';return;}
-  try{
-    const DADOS = await decryptData(CIPHERTEXT, pass);
-    document.getElementById('lock').style.display='none';
-    document.getElementById('app').style.display='block';
-    render(DADOS);
-  }catch(e){ err.textContent='Senha incorreta.'; }
+  try{ showApp(await decryptData(CIPHERTEXT, pass)); }
+  catch(e){ err.textContent='Senha incorreta.'; }
 }
-document.getElementById('go').addEventListener('click', tryUnlock);
-document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
 
-function render(DADOS){
+if (PLAINDATA){
+  showApp(PLAINDATA);
+} else {
+  document.getElementById('go').addEventListener('click', tryUnlock);
+  document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+  document.getElementById('eye').addEventListener('click', ()=>{
+    const i=document.getElementById('pw'); i.type = i.type==='password' ? 'text' : 'password'; i.focus();
+  });
+}
+
+let _DADOS=null;
+function initMonths(DADOS){
+  _DADOS = DADOS;
+  document.getElementById('t').textContent = DADOS.titulo;
+  const sel=document.getElementById('monthsel'); sel.innerHTML='';
+  let inicial = DADOS.meses.find(m=>m.atual) || DADOS.meses[0];
+  DADOS.meses.forEach(m=>{
+    const b=document.createElement('button'); b.className='mbtn'+(m.id===inicial.id?' sel':''); b.textContent=m.nome;
+    b.addEventListener('click', ()=>{
+      [...sel.children].forEach(c=>c.classList.remove('sel')); b.classList.add('sel'); render(DADOS, m.id);
+    });
+    sel.appendChild(b);
+  });
+  render(DADOS, inicial.id);
+}
+
+function render(DADOS, monthId){
   const f = v => "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
   const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const C = {mat:cssv('--mat'), noi:cssv('--noi'), conj:cssv('--conj')};
   const nome = {mat:"Matheus", noi:"Rayane", conj:"Conjunto"};
   const tagcls = {mat:'t-mat', noi:'t-noi', conj:'t-conj'};
+  const mes = DADOS.meses.find(m=>m.id===monthId);
+  const faturas = mes.faturas || [];
 
-  const meiaConj = DADOS.conjunto_total/2;
-  const matTotal = DADOS.matheus_individual + meiaConj;
-  const noiTotal = DADOS.noiva_individual + meiaConj;
+  // fixos por pessoa (recorrente)
+  let fixMat=0, fixNoi=0, fixConj=0;
+  DADOS.fixos.forEach(x=>{ if(x.quem==='mat')fixMat+=x.valor; else if(x.quem==='noi')fixNoi+=x.valor; else fixConj+=x.valor; });
+  // faturas do mes por pessoa
+  let fatMat=0, fatNoi=0, fatConj=0;
+  faturas.forEach(x=>{ fatMat+=x.mat||0; fatNoi+=x.noi||0; fatConj+=x.conj||0; });
+
+  const indMat = fixMat + fatMat;
+  const indNoi = fixNoi + fatNoi;
+  const conj = fixConj + fatConj;
+  const meiaConj = conj/2;
+  const matTotal = indMat + meiaConj;
+  const noiTotal = indNoi + meiaConj;
   const total = matTotal + noiTotal;
 
-  document.getElementById('t').textContent = DADOS.titulo;
-  document.getElementById('s').textContent = "Mês de referência: " + DADOS.mesAtual + "  ·  atualizado em " + DADOS.atualizado;
+  document.getElementById('s').textContent = mes.nome + "  ·  atualizado em " + DADOS.atualizado;
   document.getElementById('total').textContent = f(total);
+  document.getElementById('totsub').textContent = "Fixos " + f(fixMat+fixNoi+fixConj) + (faturas.length? "  +  faturas " + f(fatMat+fatNoi+fatConj) : "  (sem faturas neste mês)");
   document.getElementById('mat').textContent = f(matTotal);
   document.getElementById('noi').textContent = f(noiTotal);
   document.getElementById('matpct').textContent = Math.round(matTotal/total*100) + "% do total";
   document.getElementById('noipct').textContent = Math.round(noiTotal/total*100) + "% do total";
 
-  const segs = [{k:'mat', v:DADOS.matheus_individual},{k:'noi', v:DADOS.noiva_individual},{k:'conj', v:DADOS.conjunto_total}];
+  // Donut
+  const segs = [{k:'mat', v:indMat},{k:'noi', v:indNoi},{k:'conj', v:conj}].filter(s=>s.v>0);
   let acc=0, stops=[];
   segs.forEach(s=>{ const a=acc/total*360, b=(acc+s.v)/total*360; stops.push(C[s.k]+" "+a+"deg "+b+"deg"); acc+=s.v; });
   document.getElementById('donut').style.background = "conic-gradient("+stops.join(',')+")";
-  const leg = document.getElementById('legend');
-  segs.concat([{k:'tot',v:total}]).forEach(s=>{
+  const leg = document.getElementById('legend'); leg.innerHTML='';
+  [{k:'mat',v:indMat},{k:'noi',v:indNoi},{k:'conj',v:conj},{k:'tot',v:total}].forEach(s=>{
     const r=document.createElement('div'); r.className='row';
     const label = s.k==='tot' ? '<b>Total</b>' : '<span><span class="dot" style="background:'+C[s.k]+'"></span>'+nome[s.k]+' '+(s.k==='conj'?'(dividido)':'(individual)')+'</span>';
     r.innerHTML = label+'<b>'+f(s.v)+'</b>'; leg.appendChild(r);
   });
 
-  const indiv = DADOS.matheus_individual + DADOS.noiva_individual;
-  const barsData=[{n:"Gastos individuais",v:indiv,c:C.mat},{n:"Gastos conjuntos",v:DADOS.conjunto_total,c:C.conj}];
-  const bw=document.getElementById('bars'); const maxb=Math.max.apply(null,barsData.map(b=>b.v));
+  // Bars
+  const indiv = indMat + indNoi;
+  const barsData=[{n:"Gastos individuais",v:indiv,c:C.mat},{n:"Gastos conjuntos",v:conj,c:C.conj}];
+  const bw=document.getElementById('bars'); bw.innerHTML=''; const maxb=Math.max(1,Math.max.apply(null,barsData.map(b=>b.v)));
   barsData.forEach(b=>{
     const d=document.createElement('div'); d.style.margin="14px 0";
     d.innerHTML='<div style="display:flex;justify-content:space-between;font-size:14px"><span>'+b.n+'</span><b>'+f(b.v)+'</b></div><div class="bar"><span style="width:'+(b.v/maxb*100)+'%;background:'+b.c+'"></span></div>';
     bw.appendChild(d);
   });
 
-  let fixMat=0, fixNoi=0, fixConj=0;
-  DADOS.fixos.forEach(x=>{ if(x.quem==='mat')fixMat+=x.valor; else if(x.quem==='noi')fixNoi+=x.valor; else fixConj+=x.valor; });
-  const fixoMensalTotal = fixMat+fixNoi+fixConj;
-  const mw=document.getElementById('months');
-  DADOS.meses.forEach(m=>{
-    const d=document.createElement('div'); d.className='month'+(m.status==='atual'?' active':'');
-    d.innerHTML='<div class="mn">'+m.nome+'</div><div class="mv">Fixo total: <b style="color:var(--txt)">'+f(fixoMensalTotal)+'</b></div><div class="mv">Matheus: '+f(fixMat)+'</div><div class="mv">Conjunto: '+f(fixConj)+'</div>';
-    mw.appendChild(d);
-  });
-
+  // Calendário (fixos + faturas com venc)
   const eventos = [];
   DADOS.fixos.forEach(x=> eventos.push({venc:x.venc, nome:x.nome, quem:x.quem, valor:x.valor}));
-  DADOS.faturas.forEach(x=>{ if(x.venc) eventos.push({venc:x.venc, nome:x.nome, quem:'mat', valor:x.total, fatura:true}); });
+  faturas.forEach(x=>{ if(x.venc) eventos.push({venc:x.venc, nome:x.nome, quem:'mat', valor:x.total, fatura:true}); });
   const porDia = {};
   eventos.forEach(e=>{ (porDia[e.venc]=porDia[e.venc]||[]).push(e); });
-  const cal=document.getElementById('cal');
+  const cal=document.getElementById('cal'); cal.innerHTML='';
   Object.keys(porDia).map(Number).sort((a,b)=>a-b).forEach(dia=>{
     const row=document.createElement('div'); row.className='day';
     const items=porDia[dia].map(e=>'<div class="it"><span class="nm"><span class="dot" style="background:'+C[e.quem]+'"></span>'+e.nome+(e.fatura?' <span class="pill" style="margin:0">(fatura)</span>':'')+'</span><b>'+f(e.valor)+'</b></div>').join('');
-    row.innerHTML='<div class="dnum">'+String(dia).padStart(2,'0')+'</div><div class="ditems">'+items+'</div>';
+    row.innerHTML='<div class="dnum">dia '+String(dia).padStart(2,'0')+'</div><div class="ditems">'+items+'</div>';
     cal.appendChild(row);
   });
 
-  const tb=document.getElementById('fixos');
+  // Fixos tabela
+  const tb=document.getElementById('fixos'); tb.innerHTML='';
   DADOS.fixos.slice().sort((a,b)=>a.venc-b.venc).forEach(x=>{
     const tr=document.createElement('tr');
     tr.innerHTML='<td>'+x.nome+'</td><td><span class="tag '+tagcls[x.quem]+'">'+nome[x.quem]+'</span></td><td class="r">'+f(x.valor)+'</td><td class="r">dia '+x.venc+'</td>';
     tb.appendChild(tr);
   });
   const trf=document.createElement('tr');
-  trf.innerHTML='<td><b>Total fixo mensal</b></td><td></td><td class="r"><b>'+f(fixoMensalTotal)+'</b></td><td></td>'; tb.appendChild(trf);
+  trf.innerHTML='<td><b>Total fixo mensal</b></td><td></td><td class="r"><b>'+f(fixMat+fixNoi+fixConj)+'</b></td><td></td>'; tb.appendChild(trf);
 
-  const fwd=document.getElementById('faturas');
-  DADOS.faturas.forEach(x=>{
+  // Faturas
+  const fwd=document.getElementById('faturas'); fwd.innerHTML='';
+  if(!faturas.length){ fwd.innerHTML='<div class="empty">Nenhuma fatura registrada neste mês.</div>'; }
+  faturas.forEach(x=>{
     const d=document.createElement('div'); d.className='invoice';
     const venc = x.venc ? ' · vence dia '+x.venc : '';
     d.innerHTML='<span>'+x.nome+'<br><small style="color:var(--mut)">Mat '+f(x.mat)+' · Ray '+f(x.noi)+' · Conj '+f(x.conj)+venc+'</small></span><b>'+f(x.total)+'</b>';
     fwd.appendChild(d);
   });
 
-  const pw=document.getElementById('pend');
+  // Pendencias
+  const pw=document.getElementById('pend'); pw.innerHTML='';
   DADOS.pendencias.forEach(p=>{const li=document.createElement('li');li.textContent=p;pw.appendChild(li);});
 
   document.getElementById('foot').textContent = "Conjunto dividido 50/50 entre Matheus e Rayane. Dados criptografados — só visíveis com a senha.";
